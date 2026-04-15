@@ -1,0 +1,26 @@
+@font-face {
+    font-family: IImpact;
+    src: url("./impact.ttf") format("truetype");
+}
+
+* {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-user-select: none;
+    user-select: none;
+    font-family: IImpact;
+}
+
+html,
+body {
+    background-color: black;
+    color: red;
+}
+
+div#root {
+    display: flex;
+    flex-direction: column;
+}
