@@ -32,18 +32,45 @@ pub(crate) fn monitor_usb_windows() {
 
 #[cfg(target_os = "linux")]
 pub(crate) fn monitor_usb_linux() {
-    use udev::MonitorBuilder;
+    use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
+    use std::os::fd::AsFd;
+    use udev::{EventType, MonitorBuilder};
 
-    let mut monitor = MonitorBuilder::new()
-        .unwrap()
+    let monitor = MonitorBuilder::new()
+        .expect("Failed to create udev monitor")
         .match_subsystem("usb")
-        .unwrap()
+        .expect("Failed to add filter")
         .listen()
-        .unwrap();
+        .expect("Failed to listen");
+
     //println!("Listening for USB device changes...");
 
-    for event in monitor.iter() {
-        break;
+    let poll_fd = PollFd::new(monitor.as_fd(), PollFlags::POLLIN);
+    let mut fds = [poll_fd];
+
+    loop {
+        match poll(&mut fds, PollTimeout::MAX) {
+            Ok(_) => {
+                for event in monitor.iter() {
+                    // Only process Bind events
+                    if event.event_type() == EventType::Bind {
+                        // You can also inspect properties like Vendor ID/Product ID here
+                        if let Some(vid) = event.device().property_value("ID_VENDOR_ID")
+                            && let Some(pid) = event.device().property_value("ID_MODEL_ID")
+                        {
+                            if let Some(vid) = vid.to_str()
+                                && let Some(pid) = pid.to_str()
+                            {
+                                if vid == "0483" && pid == "374b" {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => eprintln!("Poll error: {:?}", e),
+        }
     }
 }
 
@@ -51,8 +78,8 @@ pub(crate) fn monitor_usb_linux() {
 pub(crate) fn monitor_usb_macos() {
     use core_foundation::runloop::CFRunLoopRun;
     use iokit_sys::{
-        io_iterator_t, kIOMasterPortDefault, kIOMatchedNotification, IOIteratorNext,
-        IOObjectRelease, IOServiceAddMatchingNotification, IOServiceMatching,
+        IOIteratorNext, IOObjectRelease, IOServiceAddMatchingNotification, IOServiceMatching,
+        io_iterator_t, kIOMasterPortDefault, kIOMatchedNotification,
     };
 
     extern "C" fn callback(_refcon: *mut std::ffi::c_void, iterator: io_iterator_t) {
