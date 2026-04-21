@@ -14,4 +14,8 @@ This uses (Embassy)[https://embassy.dev/] with the NUCLEO-F767ZI board. Embassy 
 
 # The IoT Board (found in the 'nano-iot' directory)
 
-This will most likely use Zephyr (mainly because I'm on Linux, and I'd like to learn more about it). This board will act has a wireless bridge between the main board and the IoT.
+~~This will most likely use Zephyr (mainly because I'm on Linux, and I'd like to learn more about it). This board will act has a wireless bridge between the main board and the IoT.~~
+
+Due do the lack of support for the WiFi module in the Nano board from Zephyr, I've decided to temporarily use the Arduino IDE and its libraries.
+
+Once Zephyr has enough support for this WiFi module, I'll switch back to Zephyr.
