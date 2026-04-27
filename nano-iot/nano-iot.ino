@@ -1,9 +1,3 @@
-int main()
-{
-    
+void setup() {}
 
-    while (true)
-    {
-
-    }
-}
+void loop() {}
