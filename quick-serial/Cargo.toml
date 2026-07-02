@@ -1,0 +1,7 @@
+[package]
+name = "quick-serial"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serial2 = "0.2.37"

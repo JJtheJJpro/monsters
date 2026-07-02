@@ -1,165 +1,119 @@
-div.main {
-    text-align: center;
-    height: 20%;
+@font-face {
+    font-family: Cascadia;
+    src: url("./cascadia.ttf") format("truetype");
 }
 
-div.interface {
-    height: 60%;
+* {
+    margin: 0;
+    border: 0;
+    padding: 0;
 }
 
-div.type {
-    height: 20%;
-}
-
-p {
-    width: auto;
-    height: auto;
-}
-
-p.title {
-    font-size: 70px;
-    padding: 40px;
-    padding-bottom: 0px;
-    -webkit-user-select: text;
-    user-select: text;
-}
-
-p.subtitle {
-    font-size: 30px;
-    padding: 10px;
-    -webkit-user-select: text;
-    user-select: text;
-}
-
-table {
-    border: 2px solid red;
-}
-
-table.interface {
-    border-bottom: 0px solid red;
-}
-
-table.type {
-    border-top: 0px solid red;
-}
-
-thead {
-    height: 16%;
-}
-
-tbody {
-    height: 84%;
-}
-
-tbody.t {
+html,
+body,
+div#root {
+    width: 100%;
     height: 100%;
-}
-
-td {
-    text-align: center;
-    border: 2px solid red;
-    width: 10%;
-    height: 21%;
-    font-size: 40px;
-}
-
-td.i {
+    background-color: black;
     color: red;
-    background-color: black;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    font-family: Cascadia;
 }
 
-td.i:hover {
-    background-color: #200000;
-}
+div#root {
+    display: flex;
+    flex-direction: column;
 
-td.i:active {
-    background-color: #800000;
-}
+    th,
+    td {
+        &:hover {
+            background-color: #200000;
+        }
 
-td.t {
-    color: red;
-    background-color: black;
-    width: calc(100% / 3);
-    font-size: 60px;
-}
+        &:active {
+            background-color: #800000;
+        }
+    }
 
-td.t:hover {
-    background-color: #200000;
-}
+    >div:nth-child(1) {
+        text-align: center;
+        height: 20%;
 
-td.t:active {
-    background-color: #800000;
-}
+        display: flex;
+        flex-direction: column;
 
-td.ia {
-    color: black;
-    background-color: red;
-}
+        justify-content: center;
 
-td.ia:hover {
-    background-color: #c00000;
-}
+        >p:nth-child(1) {
+            font-size: 5vmin;
+            user-select: text;
+            -webkit-user-select: text;
+        }
 
-td.ia:active {
-    background-color: #800000;
-}
+        >p:nth-child(2) {
+            font-size: 3vmin;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+    }
 
-td.ta {
-    color: black;
-    background-color: red;
-    width: calc(100% / 3);
-    font-size: 60px;
-}
+    >div:nth-child(2) {
+        text-align: center;
+        height: 80%;
 
-td.ta:hover {
-    background-color: #c00000;
-}
+        >table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
 
-td.ta:active {
-    background-color: #800000;
-}
+            >thead {
+                width: 100%;
+                height: 20%;
+                font-size: min(2vw, 3vh);
 
-td.id,
-td.id:hover,
-td.id:active {
-    color: #800000;
-    background-color: black;
-}
+                >tr {
+                    width: 100%;
+                    height: 100%;
 
-td.ida,
-td.ida:hover,
-td.ida:active {
-    color: #800000;
-    background-color: #500000;
-}
+                    >th {
+                        width: 10%;
+                        height: 100%;
+                        border: 2px solid red;
+                    }
+                }
+            }
 
-th {
-    text-align: center;
-    border: 2px solid red;
-    font-size: 40px;
-    font-weight: normal;
-}
+            >tbody {
+                width: 100%;
+                height: 80%;
 
-th.interface {
-    height: 16%;
-}
+                >tr:not(:nth-child(5)) {
+                    width: 100%;
+                    height: 18%;
+                    font-size: min(1.5vw, 3vh);
 
-th:hover {
-    background-color: #200000;
-}
+                    >td {
+                        width: 10%;
+                        height: calc(100% / 6);
+                        border: 2px solid red;
+                    }
+                }
 
-th:active {
-    background-color: #800000;
-}
+                >tr:nth-child(5) {
+                    width: 100%;
+                    height: 28%;
+                    font-size: min(3vw, 6vh);
 
-th.interface {
-    width: 10%;
-}
-
-tr.interface.h {
-    height: 16%;
-}
-
-tr.interface {
-    height: 21%;
+                    >td {
+                        width: 50%;
+                        height: calc(100% / 3);
+                        border: 2px solid red;
+                    }
+                }
+            }
+        }
+    }
 }
