@@ -5,7 +5,9 @@ runner = "probe-rs run --chip STM32F767ZITx"
 target = "thumbv7em-none-eabihf"
 
 [env]
-DEFMT_LOG = "trace"
+DEFMT_LOG = "debug"
+WIFI_SSID = { value = "", force = false }
+WIFI_PASS = { value = "", force = false }
 
 [alias]
 deploy = "flash --release --chip STM32F767ZITx"
