@@ -1,19 +1,19 @@
-# The Monster Controller
+# The Monsters
 
 Every Halloween, my dad and I set up animatronic monsters to scare people when they come toward our house.  Scary, right?
 
-This contains three parts: The Program, the Main Board, and the IoT Board.
+This contains three parts: The Program, the Main Board, and the common shared files and libraries.
 
-# The Program (found in the 'program' directory)
+## The Program (found in the 'program' directory)
 
 This uses Tauri's software technology to build a small, fast, and good-looking app both for computers and phones.
 
-# The Main Board (found in the 'nucleo' directory)
+Other ports of the program will be made afterwards.
 
-This uses (Embassy)[https://embassy.dev/] with the NUCLEO-F767ZI board. Embassy is used because of the ease of use with Rust and its amazingly small size. This board will control the monsters, using its Micro USB connector as a serial port for computer-to-board communications.
+## The Main Board (found in the 'controller' directory)
 
-# The IoT Board (found in the 'nano-iot' directory)
+This uses [Embassy](https://embassy.dev/) with the NUCLEO-F767ZI board. Embassy is used because of the ease of use with Rust and its amazingly small size. This board controls the monsters, using its OTG Micro USB connector as a serial port for computer-to-board communications.
 
-~~This will most likely use Zephyr (mainly because I'd like to learn more about it). This board will act has a wireless bridge between the main board and the IoT.~~
+## Shared Libraries and Files (found in the 'common' directory)
 
-At some point I will be using Zephyr, but for the sake of my sanity, I'm gonna stick with the Arduino IDE.
+This holds any multi-used library, file, consts, etc.

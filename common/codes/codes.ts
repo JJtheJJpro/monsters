@@ -1,0 +1,20 @@
+export const NET_OFF = 0b10000000;
+export const NET_ON = 0b10000001;
+export const SEND_DATA_OFF = 0b10000010;
+export const SEND_DATA_ON = 0b10000011;
+export const TEST_END = 0b10000100;
+export const TEST_BEGIN = 0b10000101;
+export const TEST_ERROR = 0b10000110;
+export const TEST_IN_PROGRESS = 0b10000111;
+export const UNAUTHORIZED = 0b10001000;
+export const AUTHORIZED = 0b10001001;
+export const KEY_GUIDE_OFF = 0b10001010;
+export const KEY_GUIDE_ON = 0b10001011;
+export const DISCONNECTED = 0b10001100;
+export const CONNECTING = 0b10001101;
+export const CONNECTED = 0b10001110;
+export const ERROR = 0b10001111;
+export const INPUT_KEYBOARD = 0b10010000;
+export const INPUT_GUI = 0b10010001;
+
+export const RESET = 0b11111111;

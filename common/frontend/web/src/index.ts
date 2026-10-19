@@ -1,0 +1,1 @@
+export { Monsters } from "./components/Monsters";

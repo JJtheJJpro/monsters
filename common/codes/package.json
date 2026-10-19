@@ -1,0 +1,8 @@
+{
+    "name": "@monsters/codes",
+    "version": "1.0.0",
+    "type": "module",
+    "exports": {
+        ".": "./codes.ts"
+    }
+}

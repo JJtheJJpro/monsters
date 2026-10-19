@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = [
+    "program/desktop/src-tauri",
+    "common/backend/rust",
+    "common/codes",
+]
+exclude = ["controller/embassy"]
+
+[workspace.dependencies]
+monsters-codes = { path = "common/codes" }
+monster-lib = { path = "common/backend/rust" }
+
+[profile.release]
+lto = true
+panic = "abort"
+
+[profile.release.package.monsters-app]
+strip = true
+opt-level = 3
+codegen-units = 1

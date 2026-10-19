@@ -1,0 +1,22 @@
+[package]
+name = "monster-lib"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+crossbeam-channel = "0.5.17"
+serial2 = "0.2.38"
+serialport = "4.10.1"
+
+monsters-codes = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+wmi = "0.18.4"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+udev = "0.9.3"
+nix = "0.31.3"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+IOKit-sys = "0.1.5"
+core-foundation = "0.10.1"

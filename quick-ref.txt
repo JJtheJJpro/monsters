@@ -1,0 +1,27 @@
+Every command is one byte.
+
+If bit 7 is clear, the byte is a Monster Code:
+
+- Bit 6: 0 = Off, 1 = On.
+- Bits 0-5: raw relay index (0-35).
+
+The controller's 36 relays are arranged as 12 sets, each with Power, Activate,
+and Alternate Activate relays. For 0-based set index `i` (set numbers 1-12),
+the raw relay indices are:
+
+- Power: `i`
+- Activate: `i + 12`
+- Alternate Activate: `i + 24`
+
+To form a Monster Code, set bit 6 for On (or leave it clear for Off) and OR
+that with the raw relay index. For example, turning on all three relays in
+set 1 sends `0b01000000`, `0b01001100`, and `0b01011000`.
+
+The frontend reserves different set numbers for Door and Garbage and sends all
+three raw relay commands for either special button. The ten regular visible
+controls map, in order, to the remaining ten sets. For example, if Door uses
+set 1 and Garbage uses set 3, the regular controls use sets 2, 4, and then 5
+through 12. If Door and Garbage use sets 11 and 12, the regular controls use
+sets 1 through 10. The backend forwards these bytes unchanged.
+
+If bit 7 is set, the byte is a Special Code, found in `common/codes/raw-codes`. Other Special Codes are reserved.
