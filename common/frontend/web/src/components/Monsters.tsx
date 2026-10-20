@@ -317,17 +317,17 @@ export function Monsters(props: MonstersProps) {
                                     })}
                                 </tr>
                                 <tr className="bottom-row">
-                                    <td colSpan={2}><CellButton label="Key Guide" active={keyGuide} variant="solid" onClick={() => cmdCallback(keyGuide ? Codes.KEY_GUIDE_OFF : Codes.KEY_GUIDE_ON)} /></td>
-                                    <td colSpan={2}><CellButton label="GUI Update" active={guiUpdate} variant="solid" disabled={!connectState} onClick={() => cmdCallback(guiUpdate ? Codes.SEND_DATA_OFF : Codes.SEND_DATA_ON)} /></td>
-                                    <td colSpan={2}><CellButton label="RESET" active={false} variant="solid" disabled={!connectState || !gui} onClick={() => cmdCallback(Codes.RESET)} /></td>
+                                    <td colSpan={2}><CellButton label="Key Guide" active={keyGuide} variant="solid" onClick={() => tryCmdCallback(keyGuide ? Codes.KEY_GUIDE_OFF : Codes.KEY_GUIDE_ON)} /></td>
+                                    <td colSpan={2}><CellButton label="GUI Update" active={guiUpdate} variant="solid" disabled={!connectState} onClick={() => tryCmdCallback(guiUpdate ? Codes.SEND_DATA_OFF : Codes.SEND_DATA_ON)} /></td>
+                                    <td colSpan={2}><CellButton label="RESET" active={false} variant="solid" disabled={!connectState || !gui} onClick={() => tryCmdCallback(Codes.RESET)} /></td>
                                     <td colSpan={2}><CellButton label={doorMonsterNumber === null ? "Door" : `Door (${doorMonsterNumber})`} active={isMonsterDataGroupSet(monsterData, doorBitIndices)} variant="solid" disabled={!connectState || !gui || doorBitIndices.length === 0} onClick={() => toggleCommandBits(doorBitIndices)} /></td>
                                     <td colSpan={2}><CellButton label={garbageMonsterNumber === null ? "Garbage" : `Garbage (${garbageMonsterNumber})`} active={isMonsterDataGroupSet(monsterData, garbageBitIndices)} variant="solid" disabled={!connectState || !gui || garbageBitIndices.length === 0} onClick={() => toggleCommandBits(garbageBitIndices)} /></td>
                                 </tr>
                                 <tr className="bottom-row">
-                                    <td colSpan={net !== undefined ? 4 : 5}><CellButton label="Keyboard" active={!gui} variant="solid" onClick={() => cmdCallback(Codes.INPUT_KEYBOARD)} /></td>
-                                    <td colSpan={net !== undefined ? 4 : 5}><CellButton label="GUI" active={gui} variant="solid" onClick={() => cmdCallback(Codes.INPUT_GUI)} /></td>
+                                    <td colSpan={net !== undefined ? 4 : 5}><CellButton label="Keyboard" active={!gui} variant="solid" onClick={() => tryCmdCallback(Codes.INPUT_KEYBOARD)} /></td>
+                                    <td colSpan={net !== undefined ? 4 : 5}><CellButton label="GUI" active={gui} variant="solid" onClick={() => tryCmdCallback(Codes.INPUT_GUI)} /></td>
                                     {net !== undefined &&
-                                        <td colSpan={2}><CellButton label="Network" active={net} variant="solid" onClick={() => cmdCallback(net ? Codes.NET_OFF : Codes.NET_ON)} /></td>
+                                        <td colSpan={2}><CellButton label="Network" active={net} variant="solid" onClick={() => tryCmdCallback(net ? Codes.NET_OFF : Codes.NET_ON)} /></td>
                                     }
                                 </tr>
                             </tbody>

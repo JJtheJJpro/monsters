@@ -11,4 +11,8 @@ cfg_select! {
         pub(super) mod windows;
         pub(super) use windows as os;
     }
+    target_os = "android" => {
+        pub(super) mod android;
+        pub(super) use android as os;
+    }
 }

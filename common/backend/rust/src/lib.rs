@@ -102,7 +102,7 @@ pub fn start_serialport_thread<
                                 }
                             }
                             on_error(String::from_utf8(buf).unwrap());
-                            sp_reader.write_all(&[codes::RESET]).unwrap();
+                            let _ = sp_reader.write_all(&[codes::RESET]);
                         } else {
                             on_read_clone(b[0]);
                         }
