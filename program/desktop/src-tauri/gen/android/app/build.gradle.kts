@@ -14,6 +14,17 @@ val tauriProperties = Properties().apply {
     }
 }
 
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.isFile) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+fun requiredKeystoreProperty(name: String): String =
+    keystoreProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+        ?: throw GradleException("Missing '$name' in ${keystorePropertiesFile.path}")
+
 android {
     compileSdk = 37
     namespace = "com.jjthejjpro.monsters_app"
@@ -24,6 +35,14 @@ android {
         targetSdk = 37
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+    }
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file(requiredKeystoreProperty("storeFile"))
+            storePassword = requiredKeystoreProperty("storePassword")
+            keyAlias = requiredKeystoreProperty("keyAlias")
+            keyPassword = requiredKeystoreProperty("keyPassword")
+        }
     }
     buildTypes {
         getByName("debug") {
@@ -39,6 +58,7 @@ android {
             }
         }
         getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                enable = true
             }
@@ -78,6 +98,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.4")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
+    implementation("com.github.mik3y:usb-serial-for-android:3.11.0")
 }
 
 apply(from = file("tauri.build.gradle.kts"))

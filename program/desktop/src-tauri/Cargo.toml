@@ -27,3 +27,6 @@ monsters-codes = { workspace = true }
 monster-lib = { workspace = true }
 crossbeam-channel = "0.5.17"
 chrono = "0.4.45"
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21.1"

@@ -2,5 +2,6 @@
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
         "controller/embassy/Cargo.toml"
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

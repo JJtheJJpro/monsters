@@ -2175,6 +2175,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "crossbeam-channel",
+ "jni",
  "monster-lib",
  "monsters-codes",
  "serde",

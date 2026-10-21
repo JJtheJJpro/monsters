@@ -1,3 +1,6 @@
+#[cfg(target_os = "android")]
+mod android_port;
+
 use std::sync::{Arc, RwLock};
 
 use crossbeam_channel::Sender;
@@ -77,10 +80,19 @@ fn frontend_loaded(app: AppHandle) {
             .open("./monst_err.log")
             .unwrap();
         let curtime = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-        writeln!(file, "[{}] {}", curtime, s.replace("\r", "\\r").replace("\n", "\\n")).unwrap();
+        writeln!(
+            file,
+            "[{}] {}",
+            curtime,
+            s.replace("\r", "\\r").replace("\n", "\\n")
+        )
+        .unwrap();
     };
 
+    #[cfg(not(target_os = "android"))]
     monster_lib::start_serialport_thread(on_connect, on_disconnect_status, on_read, on_error);
+    #[cfg(target_os = "android")]
+    android_port::start_serialport_thread(on_connect, on_disconnect_status, on_read, on_error);
 }
 
 #[tauri::command]
