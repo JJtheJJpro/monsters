@@ -10,6 +10,8 @@ This uses Tauri's software technology to build a small, fast, and good-looking a
 
 Other ports of the program will be made afterwards.
 
+Linux note: run `WEBKIT_DISABLE_DMABUF_RENDERER 1` on bash or `set -gx WEBKIT_DISABLE_DMABUF_RENDERER 1` on fish to run the Tauri apps.
+
 ## The Main Board (found in the 'controller' directory)
 
 This uses [Embassy](https://embassy.dev/) with the NUCLEO-F767ZI board. Embassy is used because of the ease of use with Rust and its amazingly small size. This board controls the monsters, using its OTG Micro USB connector as a serial port for computer-to-board communications.
