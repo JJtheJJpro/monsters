@@ -12,7 +12,7 @@ export default function CellButton(props: {
         width: "100%",
         height: "100%",
         borderRadius: 0,
-        fontFamily: "MonstersCascadia",
+        fontFamily: "Doors",
         fontSize: "inherit",
         bgcolor: props.active ? Consts.MAIN_COLOR : Consts.BLACK,
         color: props.active ? Consts.BLACK : Consts.MAIN_COLOR,

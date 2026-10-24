@@ -6,7 +6,7 @@ import { Cmd } from "./cmd";
 import { cmdToBitIndices, isMonsterDataBitSet, isMonsterDataGroupSet, MONSTER_NUMBERS, monsterColumnToBitIndex, monsterNumberToIndex } from "./MonstCodeMachine";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { useState } from "react";
-import { Button, DialogContent, DialogTitle, Modal, ModalDialog, Option, Select, Sheet, Table } from "@mui/joy";
+import { Button, DialogContent, DialogTitle, Modal, ModalDialog, Option, Input, Select, Sheet, Table } from "@mui/joy";
 import { CssVarsProvider, useColorScheme } from "@mui/joy/styles";
 import * as Codes from "@monsters/codes";
 import * as Consts from "./consts";
@@ -20,12 +20,14 @@ export type MonstersProps = {
     gui: boolean,
     keyGuide: boolean,
     guiUpdate: boolean,
+    netPass: boolean,
     net?: boolean,
     cmdCallback: (cmd: number) => Promise<boolean>,
+    sendPasswordCallback: (pass: string) => Promise<boolean>,
 };
 
 export function Monsters(props: MonstersProps) {
-    const { version, usedBy, connectState, gui, keyGuide, guiUpdate, net, cmdCallback } = props;
+    const { version, usedBy, connectState, gui, keyGuide, guiUpdate, netPass, net, cmdCallback, sendPasswordCallback } = props;
 
     const [monsterData, setMonsterData] = useState<Set<number>>(() => new Set());
     const [monsterNames, setMonsterNames] = useState<string[]>(() => [...Consts.DEFAULT_MONSTER_NAMES]);
@@ -34,6 +36,7 @@ export function Monsters(props: MonstersProps) {
     const [doorMonsterNumber, setDoorMonsterNumber] = useState<number | null>(null);
     const [garbageMonsterNumber, setGarbageMonsterNumber] = useState<number | null>(null);
     const [setupComplete, setSetupComplete] = useState(false);
+    const [curPass, setCurPass] = useState("");
     const specialMonsterNumbers = { door: doorMonsterNumber, garbage: garbageMonsterNumber };
     const doorBitIndices = cmdToBitIndices(Cmd.D, specialMonsterNumbers);
     const garbageBitIndices = cmdToBitIndices(Cmd.G, specialMonsterNumbers);
@@ -209,7 +212,7 @@ export function Monsters(props: MonstersProps) {
         height: "100%",
         boxSizing: "border-box",
         bgcolor: Consts.BLACK,
-        fontFamily: "MonstersCascadia",
+        fontFamily: "Doors",
     };
 
     function ForceDarkMode() {
@@ -261,6 +264,29 @@ export function Monsters(props: MonstersProps) {
                             onClick={() => setSetupComplete(true)}
                         >
                             Continue
+                        </Button>
+                    </ModalDialog>
+                </Modal>
+                <Modal open={netPass} onClose={() => undefined}>
+                    <ModalDialog size="lg">
+                        <DialogTitle>Enter Password</DialogTitle>
+                        <DialogContent>
+                            Enter the password for the monster box:
+                        </DialogContent>
+                        <Input
+                            autoFocus
+                            size="lg"
+                            //value={props.renameDraft}
+                            sx={{ "--Input-focusedHighlight": "red !important" }}
+                            onChange={e => setCurPass(e.currentTarget.value)}
+                        />
+                        <Button
+                            color="danger"
+                            size="lg"
+                            variant="solid"
+                            onClick={() => sendPasswordCallback(curPass)}
+                        >
+                            Authorize
                         </Button>
                     </ModalDialog>
                 </Modal>

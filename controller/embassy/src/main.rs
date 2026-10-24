@@ -173,7 +173,9 @@ fn on_wifi_data_event(data: IncomingData) -> WifiCallbackFuture {
                 wifi::request_send_multi(id, 1, &[codes::UNAUTHORIZED]).await;
             }
         } else {
-            process_byte(data[0], Some(id), None).await;
+            for b in data {
+                process_byte(b, Some(id), None).await;
+            }
             //info!("0b{:08b}", data[0]);
             //wifi::request_send_multi(id, 1, &[0]).await;
         }

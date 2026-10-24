@@ -20,6 +20,7 @@ function App() {
     const [keyGuide, setKeyGuide] = useState(false);
     const [guiUpdate, setGuiUpdate] = useState(false);
     const [net, setNet] = useState(false);
+    const [netPass, setNetPass] = useState(false);
 
     const cmdCallback = async (cmd: number) => {
         if (cmd < 0b10000000) {
@@ -29,19 +30,17 @@ function App() {
             switch (cmd) {
                 case Codes.NET_OFF:
                     setNet(false);
-                    ret = true;
+                    ret = await invoke<boolean>("net_off");
                     break;
                 case Codes.NET_ON:
                     setNet(true);
-                    ret = true;
+                    ret = await invoke<boolean>("net_on");
                     break;
                 case Codes.SEND_DATA_OFF:
                     ret = await invoke<boolean>("cmd", { b: cmd });
                     break;
                 case Codes.SEND_DATA_ON:
                     ret = await invoke<boolean>("cmd", { b: cmd });
-                    break;
-                case Codes.AUTHORIZED:
                     break;
                 case Codes.KEY_GUIDE_OFF:
                     setKeyGuide(false);
@@ -68,6 +67,11 @@ function App() {
         }
     };
 
+    const sendPasswordCallback = async (pass: string) => {
+        setNetPass(false);
+        return await invoke<boolean>("net_auth", { pass });
+    };
+
     useEffect(() => {
         const unlisten = listen<number>("cmd", ev => {
             const b = ev.payload;
@@ -79,6 +83,12 @@ function App() {
                 case Codes.SEND_DATA_ON:
                     setGuiUpdate(true);
                     break;
+                case Codes.AUTHORIZED:
+                    setNetPass(false);
+                    break;
+                case Codes.UNAUTHORIZED:
+                    setNetPass(true);
+                    break;
                 case Codes.DISCONNECTED:
                     setConnectState(null);
                     break;
@@ -88,6 +98,7 @@ function App() {
                 case Codes.CONNECTED:
                     setConnectState(true);
                     break;
+
             }
         });
 
@@ -97,7 +108,7 @@ function App() {
     }, []);
 
     return (
-        <Monsters version="0.0.0" usedBy="Tauri" connectState={connectState} gui={gui} keyGuide={keyGuide} guiUpdate={guiUpdate} net={net} cmdCallback={cmdCallback} />
+        <Monsters version="0.0.0" usedBy="Tauri" connectState={connectState} gui={gui} keyGuide={keyGuide} guiUpdate={guiUpdate} netPass={netPass} net={net} cmdCallback={cmdCallback} sendPasswordCallback={sendPasswordCallback} />
     );
 }
 

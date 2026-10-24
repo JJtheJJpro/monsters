@@ -4,9 +4,10 @@ mod sp;
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use monsters_codes as codes;
 use serial2::SerialPort;
+use socket2::{Domain, Protocol, Socket, Type};
 use std::{
-    io::{ErrorKind, Read, Write},
-    net::{Shutdown, TcpStream},
+    io::{self, ErrorKind, Read, Write},
+    net::{Shutdown, TcpStream, ToSocketAddrs},
     sync::Arc,
     thread,
     time::Duration,
@@ -141,34 +142,65 @@ pub enum TcpControlCmd {
 ///
 /// The writer is given when the `on_connect` callback is called.
 ///
-/// When `on_disconnect` is called, the previously given writer will no longer work; it must be dropped.
+/// When `on_disconnect_status` is called, the previously given writer will no longer work; it must be dropped.
 pub fn start_tcp_thread<
-    FNeedsPswd: Fn(Option<Sender<[u8; 32]>>) + Send + Sync + 'static,
+    A: ToSocketAddrs + Send + Sync + 'static,
+    FNeedsPswd: Fn(Option<Sender<[u8; 64]>>) + Send + Sync + 'static,
     FConnect: Fn(Sender<u8>) + Send + Sync + 'static,
-    FDisconnect: Fn() + Send + Sync + 'static,
+    FDisconnectStatus: Fn(bool) + Send + Sync + 'static,
     FRead: Fn(u8) + Send + Sync + 'static,
+    FError: Fn(String) + Send + Sync + 'static,
 >(
-    ip: String,
+    ip: A,
     timeout: Duration,
     stop_rx: Receiver<TcpControlCmd>, // Control channel to trigger disconnect
     on_password_needed: FNeedsPswd,
     on_connect: FConnect,
-    on_disconnect: FDisconnect,
+    on_disconnect_status: FDisconnectStatus,
     on_read: FRead,
+    _on_error: FError, // this is a maybe.  the only concern here is that the wifi module takes a full like 5 seconds to connect...
 ) -> thread::JoinHandle<()> {
     let on_read = Arc::new(on_read);
+    let ip = Arc::new(ip);
 
     thread::spawn(move || {
         'tcp_lifecycle: loop {
+            on_disconnect_status(false);
             // 1. Check if stop signal was sent before trying to connect
             if let Ok(TcpControlCmd::Stop) = stop_rx.try_recv() {
                 break 'tcp_lifecycle;
             }
 
-            let mut tcp = match TcpStream::connect(&ip) {
+            let (connect_tx, connect_rx) = crossbeam_channel::bounded(1);
+            let (connect_stop_tx, connect_stop_rx) = crossbeam_channel::bounded(1);
+            let connect_ip = Arc::clone(&ip);
+            let connect_handle = thread::spawn(move || {
+                let result = tcp_connect_nonblocking(connect_ip.as_ref(), &connect_stop_rx);
+                let _ = connect_tx.send(result);
+            });
+
+            let connect_result = crossbeam_channel::select_biased! {
+                recv(stop_rx) -> cmd => {
+                    if matches!(cmd, Ok(TcpControlCmd::Stop)) || cmd.is_err() {
+                        let _ = connect_stop_tx.try_send(());
+                        drop(connect_handle);
+                        break 'tcp_lifecycle;
+                    }
+                    continue 'tcp_lifecycle;
+                }
+                recv(connect_rx) -> result => result.unwrap_or_else(|_| {
+                    Err(io::Error::new(
+                        ErrorKind::Other,
+                        "TCP connection worker exited without a result",
+                    ))
+                }),
+            };
+
+            let mut tcp = match connect_result {
                 Ok(v) => v,
                 Err(e) => {
                     eprintln!("TcpStream Connect Error: {e}");
+                    let _ = connect_handle.join();
                     // Sleep with interrupt check
                     if thread_sleep_or_stop(&stop_rx, timeout) {
                         break 'tcp_lifecycle;
@@ -176,6 +208,17 @@ pub fn start_tcp_thread<
                     continue;
                 }
             };
+            let _ = connect_handle.join();
+
+            if let Err(e) = tcp.set_nodelay(true) {
+                eprintln!("TcpStream Set NoDelay: {e}");
+                if thread_sleep_or_stop(&stop_rx, timeout) {
+                    break 'tcp_lifecycle;
+                }
+                continue;
+            }
+
+            on_disconnect_status(true);
 
             let _ = tcp.set_read_timeout(None);
             let _ = tcp.set_write_timeout(None);
@@ -200,50 +243,50 @@ pub fn start_tcp_thread<
 
             // --- Password Phase ---
             if auth_byte[0] == codes::UNAUTHORIZED {
-                let (pswd_tx, pswd_rx) = unbounded::<[u8; 32]>();
+                let (pswd_tx, pswd_rx) = unbounded::<[u8; 64]>();
                 on_password_needed(Some(pswd_tx));
-
-                // Wait for password OR stop command
-                crossbeam_channel::select! {
-                    recv(stop_rx) -> msg => {
-                        if matches!(msg, Ok(TcpControlCmd::Stop)) {
-                            on_password_needed(None);
-                            break 'tcp_lifecycle;
-                        }
-                    }
-                    recv(pswd_rx) -> pswd => {
-                        match pswd {
-                            Ok(pswd_bytes) => {
-                                if let Err(e) = tcp.write_all(&pswd_bytes) {
-                                    eprintln!("TcpStream Write Password: {e}");
-                                    on_password_needed(None);
-                                    if thread_sleep_or_stop(&stop_rx, timeout) { break 'tcp_lifecycle; }
-                                    continue;
-                                }
-                                if let Err(e) = tcp.read_exact(&mut auth_byte) {
-                                    eprintln!("TcpStream Read Auth Response: {e}");
-                                    on_password_needed(None);
-                                    if thread_sleep_or_stop(&stop_rx, timeout) { break 'tcp_lifecycle; }
-                                    continue;
-                                }
-                                if auth_byte[0] == codes::UNAUTHORIZED {
-                                    eprintln!("Auth failed");
-                                    on_password_needed(None);
-                                    if thread_sleep_or_stop(&stop_rx, timeout) { break 'tcp_lifecycle; }
-                                    continue;
-                                }
-                            }
-                            Err(_) => {
+                while auth_byte[0] == codes::UNAUTHORIZED {
+                    // Wait for password OR stop command
+                    crossbeam_channel::select! {
+                        recv(stop_rx) -> msg => {
+                            if matches!(msg, Ok(TcpControlCmd::Stop)) {
                                 on_password_needed(None);
-                                if thread_sleep_or_stop(&stop_rx, timeout) { break 'tcp_lifecycle; }
-                                continue;
+                                break 'tcp_lifecycle;
+                            }
+                        }
+                        recv(pswd_rx) -> pswd => {
+                            match pswd {
+                                Ok(pswd_bytes) => {
+                                    if let Err(e) = tcp.write_all(&pswd_bytes) {
+                                        eprintln!("TcpStream Write Password: {e}");
+                                        on_password_needed(None);
+                                        if thread_sleep_or_stop(&stop_rx, timeout) { break 'tcp_lifecycle; }
+                                        continue;
+                                    }
+                                    if let Err(e) = tcp.read_exact(&mut auth_byte) {
+                                        eprintln!("TcpStream Read Auth Response: {e}");
+                                        on_password_needed(None);
+                                        if thread_sleep_or_stop(&stop_rx, timeout) { break 'tcp_lifecycle; }
+                                        continue;
+                                    }
+                                    if auth_byte[0] == codes::UNAUTHORIZED {
+                                        eprintln!("Auth failed");
+                                        on_password_needed(None);
+                                        if thread_sleep_or_stop(&stop_rx, timeout) { break 'tcp_lifecycle; }
+                                    } else if auth_byte[0] == codes::AUTHORIZED {
+                                        break;
+                                    }
+                                }
+                                Err(_) => {
+                                    on_password_needed(None);
+                                    if thread_sleep_or_stop(&stop_rx, timeout) { break 'tcp_lifecycle; }
+                                    continue;
+                                }
                             }
                         }
                     }
                 }
             }
-
-            on_password_needed(None);
 
             // --- Connected Phase ---
             let mut reader_stream = match tcp.try_clone() {
@@ -304,7 +347,7 @@ pub fn start_tcp_thread<
                             let _ = writer_stream_clone.shutdown(Shutdown::Both);
                             let _ = read_handle.join();
                             drop(rx);
-                            on_disconnect();
+                            on_disconnect_status(false);
                             break 'tcp_lifecycle; // Fully exit thread loop
                         }
                     }
@@ -316,13 +359,90 @@ pub fn start_tcp_thread<
             let _ = read_handle.join();
 
             drop(rx);
-            on_disconnect();
+            on_disconnect_status(false);
 
             if thread_sleep_or_stop(&stop_rx, timeout) {
                 break 'tcp_lifecycle;
             }
         }
     })
+}
+
+fn tcp_connect_nonblocking<A: ToSocketAddrs>(
+    address: &A,
+    stop_rx: &Receiver<()>,
+) -> io::Result<TcpStream> {
+    let mut last_error = None;
+
+    for address in address.to_socket_addrs()? {
+        if !matches!(
+            stop_rx.try_recv(),
+            Err(crossbeam_channel::TryRecvError::Empty)
+        ) {
+            return Err(io::Error::new(
+                ErrorKind::Interrupted,
+                "connection cancelled",
+            ));
+        }
+
+        let socket = match Socket::new(
+            Domain::for_address(address),
+            Type::STREAM,
+            Some(Protocol::TCP),
+        ) {
+            Ok(socket) => socket,
+            Err(error) => {
+                last_error = Some(error);
+                continue;
+            }
+        };
+
+        if let Err(error) = socket.set_nonblocking(true) {
+            last_error = Some(error);
+            continue;
+        }
+
+        match socket.connect(&address.into()) {
+            Ok(()) => return socket_to_tcp_stream(socket),
+            Err(error) if error.kind() == ErrorKind::WouldBlock => {}
+            Err(error) => {
+                last_error = Some(error);
+                continue;
+            }
+        }
+
+        loop {
+            crossbeam_channel::select! {
+                recv(stop_rx) -> _ => {
+                    return Err(io::Error::new(ErrorKind::Interrupted, "connection cancelled"));
+                }
+                default(Duration::from_millis(25)) => {}
+            }
+
+            if let Some(error) = socket.take_error()? {
+                last_error = Some(error);
+                break;
+            }
+
+            match socket.peer_addr() {
+                Ok(_) => return socket_to_tcp_stream(socket),
+                Err(error) if error.kind() == ErrorKind::NotConnected => {}
+                Err(error) => {
+                    last_error = Some(error);
+                    break;
+                }
+            }
+        }
+    }
+
+    Err(last_error
+        .unwrap_or_else(|| io::Error::new(ErrorKind::InvalidInput, "no socket addresses resolved")))
+}
+
+fn socket_to_tcp_stream(socket: Socket) -> io::Result<TcpStream> {
+    let stream = TcpStream::from(socket);
+    stream.set_nonblocking(false)?;
+    Ok(stream)
 }
 
 /// Helper function to sleep safely while listening for a Stop command
