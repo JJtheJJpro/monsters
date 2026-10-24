@@ -404,7 +404,11 @@ fn tcp_connect_nonblocking<A: ToSocketAddrs>(
 
         match socket.connect(&address.into()) {
             Ok(()) => return socket_to_tcp_stream(socket),
-            Err(error) if error.kind() == ErrorKind::WouldBlock => {}
+            Err(error)
+                if error.kind() == ErrorKind::WouldBlock
+                    || (cfg!(any(target_os = "linux", target_os = "android"))
+                        && error.raw_os_error() == Some(115))
+                    || (cfg!(target_os = "macos") && error.raw_os_error() == Some(36)) => {}
             Err(error) => {
                 last_error = Some(error);
                 continue;
